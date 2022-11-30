@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/common-nighthawk/go-figure"
 	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/proxy"
 	"github.com/onedss/ebp-proxy/service"
 	"log"
 	"os"
@@ -19,8 +20,11 @@ func StartApp() {
 
 	httpPort := mylog.Conf().Section("http").Key("port").MustInt(51180)
 	oneHttpServer := NewOneHttpServer(httpPort)
+	proxyPort := mylog.Conf().Section("proxy").Key("port").MustInt(7202)
+	oneProxyServer := proxy.NewOneProxyServer(proxyPort)
 	p := &application{}
 	p.AddServer(oneHttpServer)
+	p.AddServer(oneProxyServer)
 
 	var s, err = service.New(p, svcConfig)
 	if err != nil {

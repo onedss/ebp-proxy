@@ -15,7 +15,7 @@ var (
 )
 
 func main() {
-	log.SetPrefix("[Ebp-GBS] ")
+	log.SetPrefix("[Ebp-Proxy] ")
 	if mylog.Debug {
 		log.SetFlags(log.Lshortfile | log.Ldate | log.Lmicroseconds)
 	} else {
