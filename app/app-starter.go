@@ -13,9 +13,9 @@ func StartApp() {
 	log.Println("ConfigFile -->", mylog.ConfFile())
 	sec := mylog.Conf().Section("service")
 	svcConfig := &service.Config{
-		Name:        sec.Key("name").MustString("EbpGBS_Service"),
-		DisplayName: sec.Key("display_name").MustString("EbpGBS_Service"),
-		Description: sec.Key("description").MustString("EbpGBS_Service"),
+		Name:        sec.Key("name").MustString("EbpProxy_Service"),
+		DisplayName: sec.Key("display_name").MustString("EbpProxy_Service"),
+		Description: sec.Key("description").MustString("EbpProxy_Service"),
 	}
 
 	httpPort := mylog.Conf().Section("http").Key("port").MustInt(51180)
