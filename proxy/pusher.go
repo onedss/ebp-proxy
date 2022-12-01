@@ -5,8 +5,10 @@ import (
 	"github.com/onedss/ebp-proxy/core"
 	"github.com/onedss/ebp-proxy/mylog"
 	"log"
+	"net"
 	"os"
 	"sync"
+	"time"
 )
 
 type Pusher struct {
@@ -50,8 +52,25 @@ func (pusher *Pusher) GetID() string {
 }
 
 func (pusher *Pusher) SendPack(pack *DataPack) *Pusher {
+	var err error
 	logger := pusher.GetLogger()
+	_, err = net.ResolveTCPAddr("tcp", pusher.GetPath())
+	if err != nil {
+		logger.Printf("Pusher[%s] 网络地址错误. [%s]", pusher.Path, pusher.ID)
+		return pusher
+	}
+	var conn net.Conn
+	hostPort := pusher.Path
+	if conn, err = net.DialTimeout("tcp4", hostPort, 500*time.Millisecond); err != nil {
+		logger.Printf("Pusher[%s] 发送数据超时. [%s], 错误: %v", hostPort, pusher.ID, err)
+		conn.Close()
+		return pusher
+	}
 	data := pack.Buffer.Bytes()
+	if conn != nil {
+		conn.Write(data)
+		conn.Close()
+	}
 	logger.Printf("%v", data)
 	return pusher
 }
