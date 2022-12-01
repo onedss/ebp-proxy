@@ -13,8 +13,8 @@ type Pusher struct {
 	core.SessionLogger
 	*Session
 
-	Path   string
-	Stoped bool
+	Path    string
+	Stopped bool
 
 	cond  *sync.Cond
 	queue []*DataPack
@@ -32,7 +32,7 @@ func NewPusher(path string, session *Session) (pusher *Pusher) {
 		pusher.GetLogger().SetOutput(mylog.GetLogWriter())
 	}
 	session.AddRTPHandles(func(pack *DataPack) {
-		pusher.QueuePack(pack)
+		pusher.SendPack(pack)
 	})
 	session.AddStopHandles(func() {
 		pusher.Server.RemovePusher(pusher)
@@ -49,6 +49,13 @@ func (pusher *Pusher) GetID() string {
 	return pusher.ID
 }
 
+func (pusher *Pusher) SendPack(pack *DataPack) *Pusher {
+	logger := pusher.GetLogger()
+	data := pack.Buffer.Bytes()
+	logger.Printf("%v", data)
+	return pusher
+}
+
 func (pusher *Pusher) QueuePack(pack *DataPack) *Pusher {
 	pusher.cond.L.Lock()
 	pusher.queue = append(pusher.queue, pack)
@@ -60,7 +67,7 @@ func (pusher *Pusher) QueuePack(pack *DataPack) *Pusher {
 func (pusher *Pusher) StartPush() {
 	logger := pusher.GetLogger()
 	logger.Printf("Pusher[%s] StartPush() Begin. [%s]", pusher.Path, pusher.ID)
-	for !pusher.Stoped {
+	for !pusher.Stopped {
 		var pack *DataPack
 		pusher.cond.L.Lock()
 		if len(pusher.queue) == 0 {
@@ -72,7 +79,7 @@ func (pusher *Pusher) StartPush() {
 		}
 		pusher.cond.L.Unlock()
 		if pack == nil {
-			if !pusher.Stoped {
+			if !pusher.Stopped {
 				logger.Printf("Pusher[%s] not stopped, but queue take out nil pack", pusher.Path)
 			}
 			continue
@@ -83,7 +90,7 @@ func (pusher *Pusher) StartPush() {
 }
 
 func (pusher *Pusher) StopPush() {
-	pusher.Stoped = true
+	pusher.Stopped = true
 }
 
 func (pusher *Pusher) BroadcastRTP(pack *DataPack) *Pusher {
