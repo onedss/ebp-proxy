@@ -31,10 +31,16 @@ func (p *application) Start(s service.Service) (err error) {
 		return
 	}
 	for _, server := range p.servers {
-		err := server.Start()
-		if err != nil {
-			return err
-		}
+		//err := server.Start()
+		//if err != nil {
+		//	return err
+		//}
+		go func(s OneServer) {
+			if err := s.Start(); err != nil {
+				log.Println("The server error!", err)
+			}
+			log.Println("The server is end. port:", s.GetPort())
+		}(server)
 	}
 	go func() {
 		for range routers.API.RestartChan {

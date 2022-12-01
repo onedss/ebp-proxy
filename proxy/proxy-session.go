@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"github.com/onedss/ebp-proxy/core"
 	"github.com/onedss/ebp-proxy/mylog"
@@ -27,6 +28,9 @@ type Session struct {
 	Timeout  int
 
 	Stopped bool
+
+	RTPHandles  []func(buffer *bytes.Buffer)
+	StopHandles []func()
 }
 
 func NewSession(server *Server, conn *net.TCPConn) *Session {
@@ -40,11 +44,22 @@ func NewSession(server *Server, conn *net.TCPConn) *Session {
 		connRW:      bufio.NewReadWriter(bufio.NewReaderSize(timeoutTCPConn, networkBuffer), bufio.NewWriterSize(timeoutTCPConn, networkBuffer)),
 		StartAt:     time.Now(),
 		Timeout:     timeoutMillis,
+
+		RTPHandles:  make([]func(*bytes.Buffer), 0),
+		StopHandles: make([]func(), 0),
 	}
 	if !mylog.Debug {
 		session.GetLogger().SetOutput(mylog.GetLogWriter())
 	}
 	return session
+}
+
+func (session *Session) AddRTPHandles(f func(*bytes.Buffer)) {
+	session.RTPHandles = append(session.RTPHandles, f)
+}
+
+func (session *Session) AddStopHandles(f func()) {
+	session.StopHandles = append(session.StopHandles, f)
 }
 
 func (session *Session) Stop() {
@@ -54,7 +69,9 @@ func (session *Session) Stop() {
 		return
 	}
 	session.Stopped = true
-
+	for _, h := range session.StopHandles {
+		h()
+	}
 	if session.privateConn != nil {
 		session.connRW.Flush()
 		session.privateConn.Close()
@@ -105,11 +122,23 @@ func (session *Session) Start() {
 			logger.Println("数据包长度错误：", pkgLen, session.privateConn.RemoteAddr())
 			break
 		}
-		bodyHead := make([]byte, pkgLen-11)
-		if _, err := io.ReadFull(session.connRW, bodyHead); err != nil {
+		bufBody := make([]byte, pkgLen-11)
+		if _, err := io.ReadFull(session.connRW, bufBody); err != nil {
 			logger.Println(err)
 			return
 		}
+		reqBuf := bytes.NewBuffer(nil)
+		reqBuf.Write(bufHead)
+		reqBuf.Write(bufVer)
+		reqBuf.Write(bufSessionId)
+		reqBuf.Write(bufType)
+		reqBuf.Write(bufLen)
+		reqBuf.Write(bufBody)
+		for _, h := range session.RTPHandles {
+			h(reqBuf)
+		}
+		//data := reqBuf.Bytes()
+		//os.Stdout.Write(data)
 		logger.Println("正常读完数据后关闭连接。", session.privateConn.RemoteAddr(), "数据包长度:", pkgLen)
 		break
 	}
