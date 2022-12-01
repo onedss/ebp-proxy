@@ -5,13 +5,20 @@ import (
 	"github.com/onedss/ebp-proxy/core"
 	"github.com/onedss/ebp-proxy/mylog"
 	"net"
+	"sync"
 )
 
 type Server struct {
 	core.SessionLogger
-	TCPListener   *net.TCPListener
-	TCPPort       int
-	Stopped       bool
+	TCPListener *net.TCPListener
+	TCPPort     int
+	Stopped     bool
+
+	pushers     map[string]*Pusher // Path <-> Pusher
+	pushersLock sync.RWMutex
+	//addPusherCh    chan *Pusher
+	//removePusherCh chan *Pusher
+
 	networkBuffer int
 }
 
@@ -20,6 +27,9 @@ func NewOneProxyServer(proxyPort int) (server *Server) {
 	return &Server{
 		SessionLogger: core.NewSessionLogger("[ProxyServer] "),
 		TCPPort:       proxyPort,
+		pushers:       make(map[string]*Pusher),
+		//addPusherCh:    make(chan *Pusher),
+		//removePusherCh: make(chan *Pusher),
 		networkBuffer: networkBuffer,
 	}
 }
@@ -72,4 +82,33 @@ func (server *Server) Stop() (err error) {
 
 func (server *Server) GetPort() int {
 	return server.TCPPort
+}
+
+func (server *Server) AddPusher(pusher *Pusher) {
+	logger := server.GetLogger()
+	server.pushersLock.Lock()
+	if _, ok := server.pushers[pusher.GetPath()]; !ok {
+		server.pushers[pusher.GetPath()] = pusher
+		go pusher.StartPush()
+		logger.Printf("Pusher[%s] start, now pusher size[%d]", pusher.GetPath(), len(server.pushers))
+	}
+	server.pushersLock.Unlock()
+}
+
+func (server *Server) RemovePusher(pusher *Pusher) {
+	logger := server.GetLogger()
+	server.pushersLock.Lock()
+	if _pusher, ok := server.pushers[pusher.GetPath()]; ok && pusher.GetID() == _pusher.GetID() {
+		delete(server.pushers, pusher.GetPath())
+		go pusher.StopPush()
+		logger.Printf("Pusher[%s] end, now pusher size[%d]\n", pusher.GetPath(), len(server.pushers))
+	}
+	server.pushersLock.Unlock()
+}
+
+func (server *Server) GetPusher(path string) (pusher *Pusher) {
+	server.pushersLock.RLock()
+	pusher = server.pushers[path]
+	server.pushersLock.RUnlock()
+	return
 }

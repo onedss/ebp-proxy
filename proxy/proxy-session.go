@@ -29,7 +29,9 @@ type Session struct {
 
 	Stopped bool
 
-	RTPHandles  []func(buffer *bytes.Buffer)
+	Pusher *Pusher
+
+	DataHandles []func(*DataPack)
 	StopHandles []func()
 }
 
@@ -45,17 +47,37 @@ func NewSession(server *Server, conn *net.TCPConn) *Session {
 		StartAt:     time.Now(),
 		Timeout:     timeoutMillis,
 
-		RTPHandles:  make([]func(*bytes.Buffer), 0),
+		DataHandles: make([]func(*DataPack), 0),
 		StopHandles: make([]func(), 0),
 	}
 	if !mylog.Debug {
 		session.GetLogger().SetOutput(mylog.GetLogWriter())
 	}
+	target1 := mylog.Conf().Section("proxy").Key("target1").MustString("192.168.0.101:7202")
+	session.AddPusher(target1)
+	target2 := mylog.Conf().Section("proxy").Key("target2").MustString("")
+	session.AddPusher(target2)
+	target3 := mylog.Conf().Section("proxy").Key("target3").MustString("")
+	session.AddPusher(target3)
+	target4 := mylog.Conf().Section("proxy").Key("target4").MustString("")
+	session.AddPusher(target4)
+	target5 := mylog.Conf().Section("proxy").Key("target5").MustString("")
+	session.AddPusher(target5)
 	return session
 }
 
-func (session *Session) AddRTPHandles(f func(*bytes.Buffer)) {
-	session.RTPHandles = append(session.RTPHandles, f)
+func (session *Session) AddPusher(path string) {
+	if path == "" {
+		return
+	}
+	session.Pusher = NewPusher(path, session)
+	if session.Server.GetPusher(path) == nil {
+		session.Server.AddPusher(session.Pusher)
+	}
+}
+
+func (session *Session) AddRTPHandles(f func(*DataPack)) {
+	session.DataHandles = append(session.DataHandles, f)
 }
 
 func (session *Session) AddStopHandles(f func()) {
@@ -89,6 +111,7 @@ func (session *Session) Start() {
 	logger := session.GetLogger()
 	logger.Printf("Session Start. [%s]", session.ID)
 	for !session.Stopped {
+		var pack *DataPack
 		if _, err := io.ReadFull(session.connRW, bufHead); err != nil {
 			logger.Println(session, err)
 			return
@@ -134,11 +157,13 @@ func (session *Session) Start() {
 		reqBuf.Write(bufType)
 		reqBuf.Write(bufLen)
 		reqBuf.Write(bufBody)
-		for _, h := range session.RTPHandles {
-			h(reqBuf)
+		pack = &DataPack{
+			Type:   GDJ0892018E,
+			Buffer: reqBuf,
 		}
-		//data := reqBuf.Bytes()
-		//os.Stdout.Write(data)
+		for _, h := range session.DataHandles {
+			h(pack)
+		}
 		logger.Println("正常读完数据后关闭连接。", session.privateConn.RemoteAddr(), "数据包长度:", pkgLen)
 		break
 	}
