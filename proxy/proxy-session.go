@@ -53,7 +53,7 @@ func NewSession(server *Server, conn *net.TCPConn) *Session {
 	if !mylog.Debug {
 		session.GetLogger().SetOutput(mylog.GetLogWriter())
 	}
-	target1 := mylog.Conf().Section("proxy").Key("target1").MustString("192.168.0.101:7202")
+	target1 := mylog.Conf().Section("proxy").Key("target1").MustString("")
 	session.AddPusher(target1)
 	target2 := mylog.Conf().Section("proxy").Key("target2").MustString("")
 	session.AddPusher(target2)
