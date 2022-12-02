@@ -89,7 +89,7 @@ func (server *Server) AddPusher(pusher *Pusher) {
 	server.pushersLock.Lock()
 	if _, ok := server.pushers[pusher.GetPath()]; !ok {
 		server.pushers[pusher.GetPath()] = pusher
-		go pusher.StartPush()
+		//go pusher.StartPush()
 		logger.Printf("Pusher[%s] start, now pusher size[%d]", pusher.GetPath(), len(server.pushers))
 	}
 	server.pushersLock.Unlock()

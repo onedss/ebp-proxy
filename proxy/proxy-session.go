@@ -21,6 +21,9 @@ type Session struct {
 	connRW      *bufio.ReadWriter
 	connWLock   sync.RWMutex
 
+	connReader *bufio.Reader
+	connWriter *bufio.Writer
+
 	// stats info
 	InBytes  int
 	OutBytes int
@@ -43,13 +46,16 @@ func NewSession(server *Server, conn *net.TCPConn) *Session {
 		ID:          shortid.MustGenerate(),
 		Server:      server,
 		privateConn: timeoutTCPConn,
-		connRW:      bufio.NewReadWriter(bufio.NewReaderSize(timeoutTCPConn, networkBuffer), bufio.NewWriterSize(timeoutTCPConn, networkBuffer)),
-		StartAt:     time.Now(),
-		Timeout:     timeoutMillis,
+		//connRW:      bufio.NewReadWriter(bufio.NewReaderSize(timeoutTCPConn, networkBuffer), bufio.NewWriterSize(timeoutTCPConn, networkBuffer)),
+		StartAt: time.Now(),
+		Timeout: timeoutMillis,
 
 		DataHandles: make([]func(*DataPack), 0),
 		StopHandles: make([]func(), 0),
 	}
+	session.connReader = bufio.NewReaderSize(timeoutTCPConn, networkBuffer)
+	session.connWriter = bufio.NewWriterSize(timeoutTCPConn, networkBuffer)
+	session.connRW = bufio.NewReadWriter(session.connReader, session.connWriter)
 	if !mylog.Debug {
 		session.GetLogger().SetOutput(mylog.GetLogWriter())
 	}
@@ -98,6 +104,10 @@ func (session *Session) Stop() {
 		session.connRW.Flush()
 		session.privateConn.Close()
 		session.privateConn = nil
+		session.connRW = nil
+		session.connWriter = nil
+		session.connReader = nil
+		logger.Printf("正常读完数据后释放连接。[%s]", session.ID)
 	}
 }
 
@@ -113,7 +123,7 @@ func (session *Session) Start() {
 	for !session.Stopped {
 		var pack *DataPack
 		if _, err := io.ReadFull(session.connRW, bufHead); err != nil {
-			logger.Println(session, err)
+			//logger.Println(session, err)
 			return
 		}
 		if bufHead[0] != 0xFE || bufHead[1] != 0xFD {
