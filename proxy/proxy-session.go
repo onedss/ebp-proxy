@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/onedss/ebp-proxy/core"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 	"github.com/teris-io/shortid"
 	"io"
 	"net"
@@ -39,8 +39,8 @@ type Session struct {
 }
 
 func NewSession(server *Server, conn *net.TCPConn) *Session {
-	networkBuffer := mylog.Conf().Section("proxy").Key("network_buffer").MustInt(204800)
-	timeoutMillis := mylog.Conf().Section("proxy").Key("timeout").MustInt(0)
+	networkBuffer := mytool.Conf().Section("proxy").Key("network_buffer").MustInt(204800)
+	timeoutMillis := mytool.Conf().Section("proxy").Key("timeout").MustInt(0)
 	timeoutTCPConn := &RichConn{conn, time.Duration(timeoutMillis) * time.Millisecond}
 	session := &Session{
 		ID:          shortid.MustGenerate(),
@@ -56,18 +56,18 @@ func NewSession(server *Server, conn *net.TCPConn) *Session {
 	session.connReader = bufio.NewReaderSize(timeoutTCPConn, networkBuffer)
 	session.connWriter = bufio.NewWriterSize(timeoutTCPConn, networkBuffer)
 	session.connRW = bufio.NewReadWriter(session.connReader, session.connWriter)
-	if !mylog.Debug {
-		session.GetLogger().SetOutput(mylog.GetLogWriter())
+	if !mytool.Debug {
+		session.GetLogger().SetOutput(mytool.GetLogWriter())
 	}
-	target1 := mylog.Conf().Section("proxy").Key("target1").MustString("")
+	target1 := mytool.Conf().Section("proxy").Key("target1").MustString("")
 	session.AddPusher(target1)
-	target2 := mylog.Conf().Section("proxy").Key("target2").MustString("")
+	target2 := mytool.Conf().Section("proxy").Key("target2").MustString("")
 	session.AddPusher(target2)
-	target3 := mylog.Conf().Section("proxy").Key("target3").MustString("")
+	target3 := mytool.Conf().Section("proxy").Key("target3").MustString("")
 	session.AddPusher(target3)
-	target4 := mylog.Conf().Section("proxy").Key("target4").MustString("")
+	target4 := mytool.Conf().Section("proxy").Key("target4").MustString("")
 	session.AddPusher(target4)
-	target5 := mylog.Conf().Section("proxy").Key("target5").MustString("")
+	target5 := mytool.Conf().Section("proxy").Key("target5").MustString("")
 	session.AddPusher(target5)
 	return session
 }

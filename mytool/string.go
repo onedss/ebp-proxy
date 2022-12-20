@@ -1,4 +1,4 @@
-package mylog
+package mytool
 
 import (
 	"encoding/json"

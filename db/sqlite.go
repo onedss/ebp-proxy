@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 	"github.com/onedss/ebp-proxy/utils"
 	"log"
 )
@@ -22,8 +22,8 @@ func Init() (err error) {
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTablename string) string {
 		return "t_" + defaultTablename
 	}
-	dbFile := mylog.DBFile()
-	log.Println("db file -->", mylog.DBFile())
+	dbFile := mytool.DBFile()
+	log.Println("db file -->", mytool.DBFile())
 	SQLite, err = gorm.Open("sqlite3", fmt.Sprintf("%s?loc=Asia/Shanghai", dbFile))
 	if err != nil {
 		return

@@ -1,6 +1,6 @@
 //go:build release
 // +build release
 
-package mylog
+package mytool
 
 var Debug = false

@@ -3,7 +3,7 @@ package proxy
 import (
 	"fmt"
 	"github.com/onedss/ebp-proxy/core"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 	"net"
 	"sync"
 )
@@ -23,7 +23,7 @@ type Server struct {
 }
 
 func NewOneProxyServer(proxyPort int) (server *Server) {
-	networkBuffer := mylog.Conf().Section("proxy").Key("network_buffer").MustInt(1048576)
+	networkBuffer := mytool.Conf().Section("proxy").Key("network_buffer").MustInt(1048576)
 	return &Server{
 		SessionLogger: core.NewSessionLogger("[ProxyServer] "),
 		TCPPort:       proxyPort,

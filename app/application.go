@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/onedss/ebp-proxy/models"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 	"github.com/onedss/ebp-proxy/routers"
 	"github.com/onedss/ebp-proxy/service"
 	"log"
@@ -17,7 +17,7 @@ func (p *application) Start(s service.Service) (err error) {
 	log.Println("********** START **********")
 	for _, server := range p.servers {
 		port := server.GetPort()
-		if mylog.IsPortInUse(port) {
+		if mytool.IsPortInUse(port) {
 			err = fmt.Errorf("TCP port[%d] In Use", port)
 			return
 		}
@@ -44,7 +44,7 @@ func (p *application) Start(s service.Service) (err error) {
 			for _, server := range p.servers {
 				server.Stop()
 			}
-			mylog.ReloadConf()
+			mytool.ReloadConf()
 			log.Println("********** START **********")
 			for _, server := range p.servers {
 				err := server.Start()
@@ -59,7 +59,7 @@ func (p *application) Start(s service.Service) (err error) {
 
 func (p *application) Stop(s service.Service) (err error) {
 	defer log.Println("********** STOP **********")
-	defer mylog.CloseLogWriter()
+	defer mytool.CloseLogWriter()
 	for _, server := range p.servers {
 		server.Stop()
 	}

@@ -1,7 +1,7 @@
 //go:build release
 // +build release
 
-package mylog
+package mytool
 
 import (
 	"io"

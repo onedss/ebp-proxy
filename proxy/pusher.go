@@ -3,7 +3,7 @@ package proxy
 import (
 	"fmt"
 	"github.com/onedss/ebp-proxy/core"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 	"log"
 	"net"
 	"os"
@@ -30,8 +30,8 @@ func NewPusher(path string, session *Session) (pusher *Pusher) {
 		queue:   make([]*DataPack, 0),
 	}
 	pusher.SetLogger(log.New(os.Stdout, fmt.Sprintf("[%s] ", session.ID), log.LstdFlags|log.Lshortfile|log.Lmicroseconds))
-	if !mylog.Debug {
-		pusher.GetLogger().SetOutput(mylog.GetLogWriter())
+	if !mytool.Debug {
+		pusher.GetLogger().SetOutput(mytool.GetLogWriter())
 	}
 	session.AddRTPHandles(func(pack *DataPack) {
 		pusher.SendPack(pack)

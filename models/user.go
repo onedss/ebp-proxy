@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 )
 
 type User struct {
@@ -15,6 +15,6 @@ type User struct {
 }
 
 func (user *User) BeforeCreate(scope *gorm.Scope) error {
-	scope.SetColumn("ID", mylog.ShortID())
+	scope.SetColumn("ID", mytool.ShortID())
 	return nil
 }

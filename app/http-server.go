@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	ffmpeg "github.com/onedss/ebp-proxy/ffmpeg_go"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 	"github.com/onedss/ebp-proxy/routers"
 	"io"
 	"log"
@@ -34,7 +34,7 @@ func (p *httpServer) Start() (err error) {
 	//http.HandleFunc("/", homeHandler)
 	//http.HandleFunc("/status", myHandler)
 	//http.HandleFunc("/ffmpeg", ffmpegHandler)
-	link := fmt.Sprintf("http://%s:%d", mylog.LocalIP(), p.httpPort)
+	link := fmt.Sprintf("http://%s:%d", mytool.LocalIP(), p.httpPort)
 	log.Println("Start http server -->", link)
 	go func() {
 		if err := p.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/onedss/ebp-proxy/cors"
 	"github.com/onedss/ebp-proxy/db"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 	"github.com/onedss/ebp-proxy/sessions"
 	validator "gopkg.in/go-playground/validator.v8"
 	"log"
@@ -32,7 +32,7 @@ func init() {
 
 	gin.DisableConsoleColor()
 	gin.SetMode(gin.ReleaseMode)
-	gin.DefaultWriter = mylog.GetLogWriter()
+	gin.DefaultWriter = mytool.GetLogWriter()
 }
 
 type APIHandler struct {
@@ -53,7 +53,7 @@ func Errors() gin.HandlerFunc {
 				case validator.ValidationErrors:
 					errs := err.Err.(validator.ValidationErrors)
 					for _, err := range errs {
-						sec := mylog.Conf().Section("localize")
+						sec := mytool.Conf().Section("localize")
 						field := sec.Key(err.Field).MustString(err.Field)
 						tag := sec.Key(err.Tag).MustString(err.Tag)
 						c.AbortWithStatusJSON(http.StatusBadRequest, fmt.Sprintf("%s %s", field, tag))
@@ -77,17 +77,17 @@ func Init() (err error) {
 	Router.Use(Errors())
 	Router.Use(cors.Default())
 
-	tokenTimeout := mylog.Conf().Section("http").Key("token_timeout").MustInt(7 * 86400)
-	webRoot := mylog.Conf().Section("http").Key("www_root").MustString("www")
+	tokenTimeout := mytool.Conf().Section("http").Key("token_timeout").MustInt(7 * 86400)
+	webRoot := mytool.Conf().Section("http").Key("www_root").MustString("www")
 
 	store := sessions.NewGormStoreWithOptions(db.SQLite, sessions.GormStoreOptions{
 		TableName: "t_sessions",
-	}, []byte("OneDss@2018"))
+	}, []byte("EbpProxy@2018"))
 	store.Options(sessions.Options{HttpOnly: true, MaxAge: tokenTimeout, Path: "/"})
 	sessionHandle := sessions.Sessions("token", store)
 
 	{
-		wwwDir := filepath.Join(mylog.DataDir(), webRoot)
+		wwwDir := filepath.Join(mytool.DataDir(), webRoot)
 		log.Println("www root -->", wwwDir)
 		Router.Use(static.Serve("/", static.LocalFile(wwwDir, true)))
 	}
@@ -95,6 +95,7 @@ func Init() (err error) {
 	{
 		api := Router.Group("/api/v1").Use(sessionHandle)
 		api.GET("/restart", API.Restart)
+		api.GET("/convert2mp3", API.Convert2MP3)
 	}
 	return
 }

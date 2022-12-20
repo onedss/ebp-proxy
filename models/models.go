@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/onedss/ebp-proxy/db"
-	"github.com/onedss/ebp-proxy/mylog"
+	"github.com/onedss/ebp-proxy/mytool"
 )
 
 func Init() (err error) {
@@ -12,14 +12,14 @@ func Init() (err error) {
 	}
 	db.SQLite.AutoMigrate(User{})
 	count := 0
-	sec := mylog.Conf().Section("http")
+	sec := mytool.Conf().Section("http")
 	defUser := sec.Key("default_username").MustString("admin")
 	defPass := sec.Key("default_password").MustString("admin")
 	db.SQLite.Model(User{}).Where("username = ?", defUser).Count(&count)
 	if count == 0 {
 		db.SQLite.Create(&User{
 			Username: defUser,
-			Password: mylog.MD5(defPass),
+			Password: mytool.MD5(defPass),
 		})
 	}
 	return
