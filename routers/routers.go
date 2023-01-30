@@ -95,7 +95,7 @@ func Init() (err error) {
 	{
 		api := Router.Group("/api/v1").Use(sessionHandle)
 		api.GET("/restart", API.Restart)
-		api.GET("/convert2mp3", API.Convert2MP3)
+		//api.GET("/convert2mp3", API.Convert2MP3)
 	}
 	return
 }
